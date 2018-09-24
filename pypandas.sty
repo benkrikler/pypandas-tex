@@ -1,0 +1,67 @@
+% MIT License
+% 
+% Copyright (c) 2018 Ben Krikler
+% 
+% Permission is hereby granted, free of charge, to any person obtaining a copy
+% of this software and associated documentation files (the "Software"), to deal
+% in the Software without restriction, including without limitation the rights
+% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+% copies of the Software, and to permit persons to whom the Software is
+% furnished to do so, subject to the following conditions:
+% 
+% The above copyright notice and this permission notice shall be included in all
+% copies or substantial portions of the Software.
+% 
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+% SOFTWARE.
+\ProvidesPackage{pypandas}[2018/09/20]
+\RequirePackage{pythontex}
+\usepackage{booktabs}
+
+
+%% Set up the python functions that talk to pandas
+\begin{pycode}
+import pandas as pd
+from ast import literal_eval
+import re
+
+
+def process_options(options):
+  options = options.strip()
+  options = re.sub(r"\\([#\[\]\\])", r"\g<1>", options)
+  if not options:
+    return {}
+
+  options = "{{{}}}".format(options)
+  return literal_eval(options)
+
+
+def table_to_latex(filename, read_kwargs="", out_args=""):
+  read_kwargs = process_options(read_kwargs)
+  read_kwargs.setdefault("sep", r"\s+")
+  df = pd.read_csv(filename, **read_kwargs)
+  out_args = process_options(out_args)
+  print(df.to_latex(**out_args))
+
+
+def csv_to_latex(filename, read_kwargs="", out_args=""):
+  read_kwargs = process_options(read_kwargs)
+  df = pd.read_csv(filename, **read_kwargs)
+  out_args = process_options(out_args)
+  print(df.to_latex(**out_args))
+\end{pycode}
+
+
+%% Wrap the python function in Latex commands
+\newcommand{\includepandascsv}[2][]{
+\pyc{csv_to_latex(filename="#2", read_kwargs=""" #1 """)}
+}
+
+\newcommand{\includepandastable}[2][]{
+\pyc{table_to_latex(filename="#2", read_kwargs=""" #1 """)}
+}
